@@ -23,10 +23,9 @@ library('chron')
 ###############################
 args = commandArgs(trailingOnly = TRUE)
 
-fluo = read.table(args[1], header=TRUE, sep='\t')
-od = read.table(args[2], header=TRUE, sep='\t')
-samplenames = read.table(args[3], header=TRUE, sep='\t')
-titles = read.table(args[4], header=TRUE, sep='\t')
+fluo = read.table('data/05-09-cotransfs-fluo.dat', header=TRUE, sep='\t')
+od = read.table('data/05-09-cotransfs-OD.dat', header=TRUE, sep='\t')
+samplenames = read.table('config/samplenames.conf', header=TRUE, sep='\t')
 
 # Rename column names to sample names, convert times to time objects
 names(fluo)[-1] = sapply(samplenames$SampleName, toString)
@@ -43,47 +42,31 @@ od$Hours = as.integer(format(od$Time, "%H"))
 # Helper Functions
 ###############################
 
-colour_comparison_plot = function(data, molten_data, ylabel="Fluorescence") {
-	# Make plot with title data$PlotTitle containing the fluorescence intensity
-	# data for the corresponding data$SampleName, from the fluo.m data frame.
-	# Values for each sample are plotted as a smooth curve, distinguished by
-	# their colour.
+colour_comparison_plot = function(molten_data, samples, maintitle,
+	outfile=NULL, ylabel="Fluorescence") {
+	# Plot in plots/`outfile`.pdf, on a single figure, the values in
+	# `molten_data`, only for the samples in `samples`. Samples are
+	# distinguished by their colour.
+	#
+	# If unspecified, `outfile` defaults to the main title.
 
-	maintitle = data$PlotTitle[1]
-	subdata = subset(molten_data, SampleName %in% data$SampleName)
+	if ( is.null(outfile) )
+		outfile = maintitle
+
+	subdata = subset(molten_data, SampleName %in% samples)
 	# For proper colouring, the SampleName factor must be redefined:
 	subdata$SampleName = factor(subdata$SampleName)
 
 	p = qplot(Time, avg, data=subdata, colour=SampleName, 
-		main=maintitle, ylab=ylabel, 
-		xlim=c(min(subdata$Time), max(subdata$Time))) +	
+		main=maintitle, ylab=ylabel) +
 		geom_errorbar(aes(ymin=avg - std, ymax=avg + std)) +
-		scale_x_datetime(major='2 hours', format='%H h') +
+		scale_x_datetime(major='2 hours', minor='10 min', format='%H h',
+			limits=c(min(subdata$Time), max(subdata$Time))) +
 		scale_colour_hue('Sample Name')
-	ggsave(paste('plots/', maintitle, '_colour.pdf', sep=''), width=16, height=10)
+	ggsave(paste('plots/', outfile, '.pdf', sep=''), width=16, height=10)
+
 	return(p)
 }
-
-facet_comparison_plot = function(data, molten_data, ylabel="Fluorescence") {
-	# Make plot with title data$PlotTitle containing the fluorescence intensity
-	# data for the corresponding data$SampleName, from the fluo.m data frame.
-	# Values for each sample are plotted as a smooth curve, distinguished by
-	# their colour.
-
-	maintitle = data$PlotTitle[1]
-	subdata = subset(molten_data, SampleName %in% data$SampleName)
-	# For proper colouring, the SampleName factor must be redefined:
-	subdata$SampleName = factor(subdata$SampleName)
-
-	p = qplot(Time, avg, data=subdata, facets= SampleName ~ ., 
-		main=maintitle, ylab=ylabel, 
-		xlim=c(min(subdata$Time), max(subdata$Time))) +	
-		geom_errorbar(aes(ymin=avg - std, ymax=avg + std)) +
-		scale_x_datetime(major='2 hours', format='%H h')
-	ggsave(paste('plots/', maintitle, '_facets.pdf', sep=''), width=16, height=10)
-	return(p)
-}
-
 
 ###############################
 # Calculations and Plotting
@@ -114,5 +97,16 @@ normalised = ddply(combined.m, .variables=c('SampleName', 'Hours'),
 	.fun=summarise, avg=mean(fluo)/mean(exp(od)), std=sd(fluo/exp(od)))
 normalised$Time = as.POSIXct(sapply(normalised$Hours, toString), format="%H")
 
-d_ply(titles, .variables=('PlotTitle'), .fun=facet_comparison_plot, 
-		molten_data=normalised, ylabel="Normalised Fluorescence [a.u.]")
+colour_comparison_plot(normalised,
+	maintitle = "Some Plot",
+	ylabel = "Normalised Fluorescence",
+	samples = c('HUGH-Port',
+				'CLINTON-Rizzuto',
+				'CHRISTIAN-Boose',
+				'JULIO-Worster',
+				'ERIK-Klippel',
+				'TYRONE-Mccrum',
+				'CLAYTON-Sheperd'),
+	)
+
+
