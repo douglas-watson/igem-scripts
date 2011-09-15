@@ -1,12 +1,8 @@
 Lysis Dynamics
 ==============
 
-- 250 M concentration: kick out the outlier. Justify it.
-
 Dose response
 =============
-
-- Add line, passing through average of each sample (average the three repeats)
 
 Overall
 =======

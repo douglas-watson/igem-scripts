@@ -1,73 +1,73 @@
-Code	SampleName	Concentration	Repeat
-A1	T7 const 	250	1
-A2	T7 14 	250	1
-A3	T7 30 	250	1
-A4	T7 54 	250	1
-A5	T7 80 	250	1
-A6	T7 111 	250	1
-A7	T7 lac2 	250	1
-A8	T7 lac2 14	250	1
-A9	T7 lac2 30	250	1
-A10	T7 lac2 54	250	1
-A11	T7 lac2 80	250	1
-A12	T7 lac2 111	250	1
-B1	T7 const 	250	2
-B2	T7 14 	250	2
-B3	T7 30 	250	2
-B4	T7 54 	250	2
-B5	T7 80 	250	2
-B6	T7 111 	250	2
-B7	T7 lac2 	250	2
-B8	T7 lac2 14	250	2
-B9	T7 lac2 30	250	2
-B10	T7 lac2 54	250	2
-B11	T7 lac2 80	250	2
-B12	T7 lac2 111	250	2
-C1	T7 const 	250	3
-C2	T7 14 	250	3
-C3	T7 30 	250	3
-C4	T7 54 	250	3
-C5	T7 80 	250	3
-C6	T7 111 	250	3
-C7	T7 lac2 	250	3
-C8	T7 lac2 14	250	3
-C9	T7 lac2 30	250	3
-C10	T7 lac2 54	250	3
-C11	T7 lac2 80	250	3
-C12	T7 lac2 111	250	3
-D1	T7 const 	0	1
-D2	T7 14 	0	1
-D3	T7 30 	0	1
-D4	T7 54 	0	1
-D5	T7 80 	0	1
-D6	T7 111 	0	1
-D7	T7 lac2 	0	1
-D8	T7 lac2 14	0	1
-D9	T7 lac2 30	0	1
-D10	T7 lac2 54	0	1
-D11	T7 lac2 80	0	1
-D12	T7 lac2 111	0	1
-E1	T7 const 	0	2
-E2	T7 14 	0	2
-E3	T7 30 	0	2
-E4	T7 54 	0	2
-E5	T7 80 	0	2
-E6	T7 111 	0	2
-E7	T7 lac2 	0	2
-E8	T7 lac2 14	0	2
-E9	T7 lac2 30	0	2
-E10	T7 lac2 54	0	2
-E11	T7 lac2 80	0	2
-E12	T7 lac2 111	0	2
-F1	T7 const 	0	3
-F2	T7 14 	0	3
-F3	T7 30 	0	3
-F4	T7 54 	0	3
-F5	T7 80 	0	3
-F6	T7 111 	0	3
-F7	T7 lac2 	0	3
-F8	T7 lac2 14	0	3
-F9	T7 lac2 30	0	3
-F10	T7 lac2 54	0	3
-F11	T7 lac2 80	0	3
-F12	T7 lac2 111	0	3
+Code	SampleName	Concentration	Repeat	Strength	Variant
+A1	T7 const 	250	1	100	Without lac operator
+A2	T7 14 	250	1	14	Without lac operator
+A3	T7 30 	250	1	30	Without lac operator
+A4	T7 54 	250	1	54	Without lac operator
+A5	T7 80 	250	1	80	Without lac operator
+A6	T7 111 	250	1	111	Without lac operator
+A7	T7 lac2 	250	1	100	With lac operator
+A8	T7 lac2 14	250	1	14	With lac operator
+A9	T7 lac2 30	250	1	30	With lac operator
+A10	T7 lac2 54	250	1	54	With lac operator
+A11	T7 lac2 80	250	1	80	With lac operator
+A12	T7 lac2 111	250	1	111	With lac operator
+B1	T7 const 	250	2	100	Without lac operator
+B2	T7 14 	250	2	14	Without lac operator
+B3	T7 30 	250	2	30	Without lac operator
+B4	T7 54 	250	2	54	Without lac operator
+B5	T7 80 	250	2	80	Without lac operator
+B6	T7 111 	250	2	111	Without lac operator
+B7	T7 lac2 	250	2	100	With lac operator
+B8	T7 lac2 14	250	2	14	With lac operator
+B9	T7 lac2 30	250	2	30	With lac operator
+B10	T7 lac2 54	250	2	54	With lac operator
+B11	T7 lac2 80	250	2	80	With lac operator
+B12	T7 lac2 111	250	2	111	With lac operator
+C1	T7 const 	250	3	100	Without lac operator
+C2	T7 14 	250	3	14	Without lac operator
+C3	T7 30 	250	3	30	Without lac operator
+C4	T7 54 	250	3	54	Without lac operator
+C5	T7 80 	250	3	80	Without lac operator
+C6	T7 111 	250	3	111	Without lac operator
+C7	T7 lac2 	250	3	100	With lac operator
+C8	T7 lac2 14	250	3	14	With lac operator
+C9	T7 lac2 30	250	3	30	With lac operator
+C10	T7 lac2 54	250	3	54	With lac operator
+C11	T7 lac2 80	250	3	80	With lac operator
+C12	T7 lac2 111	250	3	111	With lac operator
+D1	T7 const 	0	1	100	Without lac operator
+D2	T7 14 	0	1	14	Without lac operator
+D3	T7 30 	0	1	30	Without lac operator
+D4	T7 54 	0	1	54	Without lac operator
+D5	T7 80 	0	1	80	Without lac operator
+D6	T7 111 	0	1	111	Without lac operator
+D7	T7 lac2 	0	1	100	With lac operator
+D8	T7 lac2 14	0	1	14	With lac operator
+D9	T7 lac2 30	0	1	30	With lac operator
+D10	T7 lac2 54	0	1	54	With lac operator
+D11	T7 lac2 80	0	1	80	With lac operator
+D12	T7 lac2 111	0	1	111	With lac operator
+E1	T7 const 	0	2	100	Without lac operator
+E2	T7 14 	0	2	14	Without lac operator
+E3	T7 30 	0	2	30	Without lac operator
+E4	T7 54 	0	2	54	Without lac operator
+E5	T7 80 	0	2	80	Without lac operator
+E6	T7 111 	0	2	111	Without lac operator
+E7	T7 lac2 	0	2	100	With lac operator
+E8	T7 lac2 14	0	2	14	With lac operator
+E9	T7 lac2 30	0	2	30	With lac operator
+E10	T7 lac2 54	0	2	54	With lac operator
+E11	T7 lac2 80	0	2	80	With lac operator
+E12	T7 lac2 111	0	2	111	With lac operator
+F1	T7 const 	0	3	100	Without lac operator
+F2	T7 14 	0	3	14	Without lac operator
+F3	T7 30 	0	3	30	Without lac operator
+F4	T7 54 	0	3	54	Without lac operator
+F5	T7 80 	0	3	80	Without lac operator
+F6	T7 111 	0	3	111	Without lac operator
+F7	T7 lac2 	0	3	100	With lac operator
+F8	T7 lac2 14	0	3	14	With lac operator
+F9	T7 lac2 30	0	3	30	With lac operator
+F10	T7 lac2 54	0	3	54	With lac operator
+F11	T7 lac2 80	0	3	80	With lac operator
+F12	T7 lac2 111	0	3	111	With lac operator
