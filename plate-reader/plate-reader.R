@@ -197,6 +197,33 @@ p_var_comparison = qplot(type, norm_rfu, data = both, geom = 'boxplot',
 	  main="Variability in promoter efficiency")
 ggsave("plots/variability_comparison.pdf", width=3, height=7)
 
+######################################
+# DNA recovery experiment
+######################################
+
+rfp = read.table('data/17.09-dnarecov-RFP.dat', header=TRUE, sep='\t')
+gfp = read.table('data/17.09-dnarecov-GFP.dat', header=TRUE, sep='\t')
+
+rfp.m = melt(rfp, id=c('Hour'), variable_name='Sample')
+gfp.m = melt(gfp, id=c('Hour'), variable_name='Sample')
+
+# Rename 'value' column to RFU or GFU
+names(rfp.m)[3] = 'RFU'
+names(gfp.m)[3] = 'GFU'
+ 
+# merge and melt again, clean up sample name
+dna_recovery = merge(rfp.m, gfp.m)
+dna_recovery$Sample = factor(dna_recovery$Sample, 
+	labels=c('C2-RFP & C11-GFP', 'C2-GFP & C11-RFP'))
+dna_recovery.m = melt(dna_recovery, id=c('Hour', 'Sample'), 
+	variable_name='Measure')
+
+# Plot comparison of two output colours, for both samples
+
+qplot(Hour, value, data = dna_recovery.m, geom = 'point',
+	colour = Sample,
+	xlab = 'Time [hours]', ylab = 'Fluorescence [a.u.]') +
+	facet_grid(Measure ~ ., scales = 'free_y')
 
 ######################################
 # PNG exports
