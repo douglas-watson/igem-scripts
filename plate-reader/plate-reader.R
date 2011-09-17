@@ -89,10 +89,115 @@ dose_response$SampleName = factor(dose_response$SampleName)
 dose_response_avg$SampleName = factor(dose_response_avg$SampleName)
 p_dose_response = qplot(Concentration, hourly_avg, data=dose_response, 
 	colour=SampleName, geom='point', xlab="IPTG concentration [µM]", 
-	ylab="Normalised RFU at saturation [a.u.]") +
+	ylab="Optical Density [a.u.]") +
 	scale_colour_hue("Promoter type") +
 	geom_line(aes(y=avg), data=dose_response_avg)
 ggsave("plots/dose-response.pdf", width=16, height=10)
+
+################################
+# Nadine's experiments
+################################
+
+od = read.table('data/16.09-nadine-OD.dat', header=TRUE, sep='\t')
+rfu = read.table('data/16.09-nadine-RFU.dat', header=TRUE, sep='\t')
+samplenames = read.table('config/16.09-nadine.titles', header=TRUE, sep='\t')
+
+# Melt and merge, convert time, insert sample concentration and name
+od.m = melt(od, id=c('Time'), variable_name='Code')
+rfu.m = melt(rfu, id=c('Time'), variable_name='Code')
+both.m = data.frame(Time=od.m$Time, Code=od.m$Code, OD=od.m$value,
+	RFU=rfu.m$value)
+both.m$Time = as.POSIXct(sapply(both.m$Time, toString), format="%H:%M:%S")
+both.m = merge(both.m, samplenames)
+
+# Normalise RFU, calculate average over the last hour (keep repeats separate)
+both.m$NormRFU = with(both.m, RFU/OD)
+
+# calculate last hour averages, and repeat averages
+averages = ddply(both.m, .variables=c('Time', 'SampleName', 'Concentration'),
+	.fun=summarise, avg=mean(NormRFU), std=sd(NormRFU)/sqrt(2))
+both.m$Hours = as.integer(format(both.m$Time, "%H"))
+last_hour_averages = ddply(subset(both.m, Hours == max(Hours) - 1), 
+		.variables=c('SampleName', 'Concentration', 'Repeat'), .fun=summarise,
+		avg=mean(NormRFU), std=sd(NormRFU)/sqrt(6))
+
+# Now separate experiments
+# Current numbering: (output of levels(samplenames$SampleName))
+# [1] "J61002 Plac-RFP + IPTG"                               
+# [2] "J6-pLac-RFP in BL21 + IPTG"                           
+# [3] "pSB3K1-pConst-TetR + J6-pTet-RFP + ATC"               
+# [4] "pSB3K1 Pconst-TetR Ptet-LacI + J61002 Ptet-RFP + ATC" 
+# [5] "pSB3K1 Pconst-TetR Ptet-LacI + J61002 Ptet-RFP + IPTG"
+exp1 = subset(both.m, SampleName == levels(SampleName)[1])
+exp2 = subset(both.m, SampleName == levels(SampleName)[2])
+exp3 = subset(both.m, SampleName == levels(SampleName)[3])
+exp4 = subset(both.m, SampleName == levels(SampleName)[4])
+exp5 = subset(both.m, SampleName == levels(SampleName)[5])
+exp1.av = subset(averages, SampleName == levels(SampleName)[1])
+exp2.av = subset(averages, SampleName == levels(SampleName)[2])
+exp3.av = subset(averages, SampleName == levels(SampleName)[3])
+exp4.av = subset(averages, SampleName == levels(SampleName)[4])
+exp5.av = subset(averages, SampleName == levels(SampleName)[5])
+exp1.lh = subset(last_hour_averages, SampleName == levels(SampleName)[1])
+exp2.lh = subset(last_hour_averages, SampleName == levels(SampleName)[2])
+exp3.lh = subset(last_hour_averages, SampleName == levels(SampleName)[3])
+exp4.lh = subset(last_hour_averages, SampleName == levels(SampleName)[4])
+exp5.lh = subset(last_hour_averages, SampleName == levels(SampleName)[5])
+
+# Dynamics plots:
+dynplot = function(all_data, av_data, colourlabel, clpalette='YlOrRd') {
+	maintitle = toString(unique(all_data$SampleName))
+	all_data$Concentration = factor(all_data$Concentration)
+	av_data$Concentration = factor(av_data$Concentration)
+	dyn = qplot(Time, NormRFU, data = all_data, geom = 'point',
+		colour = Concentration,
+		xlab = "Time", ylab = "Normalised RFU [a.u.]", main=maintitle) +
+		geom_smooth() +
+		# geom_line(aes(y = avg), data = exp1.av) +
+		scale_colour_brewer(colourlabel, palette = clpalette) + 
+		scale_x_datetime(minor = '10 min', format = '%H h')
+	return(dyn)
+}
+
+dyn_exp1 = dynplot(exp1, exp1.av, "Concentration [µM]")
+dyn_exp2 = dynplot(exp2, exp2.av, "Concentration [µM]")
+dyn_exp3 = dynplot(exp3, exp3.av, "Concentration [ng / ml]", clpalette="Spectral")
+dyn_exp4 = dynplot(exp4, exp4.av, "Concentration [ng / ml]")
+dyn_exp5 = dynplot(exp5, exp5.av, "Concentration [µM]")
+ggsave("plots/Nadine-Exp1_dynamics.pdf", plot=dyn_exp1, width=16, height=10)
+ggsave("plots/Nadine-Exp2_dynamics.pdf", plot=dyn_exp2, width=16, height=10)
+ggsave("plots/Nadine-Exp3_dynamics.pdf", plot=dyn_exp3, width=16, height=10)
+ggsave("plots/Nadine-Exp4_dynamics.pdf", plot=dyn_exp4, width=16, height=10)
+ggsave("plots/Nadine-Exp5_dynamics.pdf", plot=dyn_exp5, width=16, height=10)
+
+# Dynamics and dose response plot for exp2:
+dosplot = function(lh_data, xunit='[µM]') {
+	maintitle = toString(unique(lh_data$SampleName))
+	xbreaks = unique(lh_data$Concentration)[-2]
+	p = qplot(Concentration, avg, data=lh_data, geom='point',
+		colour=factor(Repeat),
+		xlab = paste("Concentration", xunit), log = 'x', 
+		ylab="Normalised RFU at saturation [a.u]", main=maintitle )  +
+		geom_linerange(aes(ymin=avg-1.96*std, ymax=avg+1.96*std)) +
+		scale_x_continuous(breaks = xbreaks) +
+		scale_colour_hue("Repeat")
+	return(p)
+}
+
+dos_exp1 = dosplot(exp1.lh)
+dos_exp2 = dosplot(exp2.lh)
+dos_exp3 = dosplot(exp3.lh, xunit='[ng/ml]')
+dos_exp4 = dosplot(exp4.lh, xunit='[ng/ml]')
+dos_exp5 = dosplot(exp5.lh)
+
+ggsave("plots/Nadine-Exp1_doseresponse.pdf", plot=dos_exp1, width=16, height=10)
+ggsave("plots/Nadine-Exp2_doseresponse.pdf", plot=dos_exp2, width=16, height=10)
+ggsave("plots/Nadine-Exp3_doseresponse.pdf", plot=dos_exp3, width=16, height=10)
+ggsave("plots/Nadine-Exp4_doseresponse.pdf", plot=dos_exp4, width=16, height=10)
+ggsave("plots/Nadine-Exp5_doseresponse.pdf", plot=dos_exp5, width=16, height=10)
+
+
+
 
 
 ###############################
@@ -138,7 +243,7 @@ p_non_random = qplot(Strength, avg, data=last_hour_avg,
 	fill=Concentration, facets=Variant ~ .,
 	geom='bar', position=dodge, stat='identity', width=w,
 	xlab="Expected promoter efficiency", ylab="Normalised RFU at Saturation [a.u]",
-	main="Designed Mutants - Dose Response") + 
+	main="Designed T7 Variants - Dose Response") + 
 	geom_errorbar(aes(ymin=avg-1.96*std, ymax=avg+1.96*std),
 		position=dodge, width=w/5) +
 	scale_fill_hue("IPTG conc. [µM]") +
@@ -165,7 +270,7 @@ p_induction_ratio = qplot(Strength, avg, data=ratio_averages, fill=Variant,
 	geom='bar', stat='identity', position=dodge, width=w,
 	xlab="Expected promoter efficiency [% of WT]", 
 	ylab="Induction Ratio (250 µM IPTG / 0 µM IPTG)",
-	main="Induction ratio comparison for designed mutants") +
+	main="Induction ratio comparison for designed T7 variants") +
 	geom_errorbar(aes(ymin=avg-1.96*std, ymax=avg+1.96*std), 
 		position=dodge, width=w/5) +
 	scale_x_continuous(breaks=ratio_averages$Strength) +
@@ -252,3 +357,14 @@ ggsave("plots/non_random_dose_response.png", plot=p_non_random,
 	width=12, height=7.5)
 ggsave("plots/varability_comparison.png", plot=p_var_comparison, 
 	width=4, height=10)
+
+# Nadine's stuff
+
+for ( i in seq(1, 5) ) {
+	ggsave(paste("plots/nadine-exp", i, "-induction.png", sep=''), 
+		plot=get(paste('dyn_exp', i, sep='')),
+		width=12, height=7.5)
+	ggsave(paste("plots/nadine-exp", i, "-doseresponse.png", sep=''), 
+		plot=get(paste('dos_exp', i, sep='')),
+		width=12, height=7.5)
+}
