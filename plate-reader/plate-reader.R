@@ -123,26 +123,23 @@ last_hour_averages = ddply(subset(both.m, Hours == max(Hours) - 1),
 
 # Now separate experiments
 # Current numbering: (output of levels(samplenames$SampleName))
-# [1] "J61002 Plac-RFP + IPTG"                               
-# [2] "J6-pLac-RFP in BL21 + IPTG"                           
-# [3] "pSB3K1-pConst-TetR + J6-pTet-RFP + ATC"               
-# [4] "pSB3K1 Pconst-TetR Ptet-LacI + J61002 Ptet-RFP + ATC" 
-# [5] "pSB3K1 Pconst-TetR Ptet-LacI + J61002 Ptet-RFP + IPTG"
-exp1 = subset(both.m, SampleName == levels(SampleName)[1])
-exp2 = subset(both.m, SampleName == levels(SampleName)[2])
-exp3 = subset(both.m, SampleName == levels(SampleName)[3])
-exp4 = subset(both.m, SampleName == levels(SampleName)[4])
-exp5 = subset(both.m, SampleName == levels(SampleName)[5])
-exp1.av = subset(averages, SampleName == levels(SampleName)[1])
-exp2.av = subset(averages, SampleName == levels(SampleName)[2])
-exp3.av = subset(averages, SampleName == levels(SampleName)[3])
-exp4.av = subset(averages, SampleName == levels(SampleName)[4])
-exp5.av = subset(averages, SampleName == levels(SampleName)[5])
-exp1.lh = subset(last_hour_averages, SampleName == levels(SampleName)[1])
-exp2.lh = subset(last_hour_averages, SampleName == levels(SampleName)[2])
-exp3.lh = subset(last_hour_averages, SampleName == levels(SampleName)[3])
-exp4.lh = subset(last_hour_averages, SampleName == levels(SampleName)[4])
-exp5.lh = subset(last_hour_averages, SampleName == levels(SampleName)[5])
+# [1] "J61002 Plac-RFP + IPTG"      
+# [2] "J61002 Ptet-RFP + ATC"        
+# [3] "J6-pLac-RFP in BL21 + IPTG"      
+# [4] "pSB3K1-pConst-TetR + J6-pTet-RFP + ATC"                      
+# [5] "pSB3K1 Pconst-TetR Ptet-LacI + J61002 Plac-RFP + ATC"   
+# [6] "pSB3K1 Pconst-TetR Ptet-LacI + J61002 Plac-RFP + IPTG"         
+
+print(levels(samplenames$SampleName))
+for ( i in seq(1, 6) ) {
+	# Assign variables expN, expN.av, and expN.lh
+	assign(paste('exp', i, sep=''), subset(both.m, 
+			SampleName == levels(SampleName)[i]))
+	assign(paste('exp', i, '.av', sep=''), subset(averages, 
+			SampleName == levels(SampleName)[i]))
+	assign(paste('exp', i, '.lh', sep=''), subset(last_hour_averages, 
+			SampleName == levels(SampleName)[i]))
+}
 
 # Dynamics plots:
 dynplot = function(all_data, av_data, colourlabel, clpalette='YlOrRd') {
@@ -153,22 +150,10 @@ dynplot = function(all_data, av_data, colourlabel, clpalette='YlOrRd') {
 		colour = Concentration,
 		xlab = "Time", ylab = "Normalised RFU [a.u.]", main=maintitle) +
 		geom_smooth() +
-		# geom_line(aes(y = avg), data = exp1.av) +
 		scale_colour_brewer(colourlabel, palette = clpalette) + 
 		scale_x_datetime(minor = '10 min', format = '%H h')
 	return(dyn)
 }
-
-dyn_exp1 = dynplot(exp1, exp1.av, "Concentration [µM]")
-dyn_exp2 = dynplot(exp2, exp2.av, "Concentration [µM]")
-dyn_exp3 = dynplot(exp3, exp3.av, "Concentration [ng / ml]", clpalette="Spectral")
-dyn_exp4 = dynplot(exp4, exp4.av, "Concentration [ng / ml]")
-dyn_exp5 = dynplot(exp5, exp5.av, "Concentration [µM]")
-ggsave("plots/Nadine-Exp1_dynamics.pdf", plot=dyn_exp1, width=16, height=10)
-ggsave("plots/Nadine-Exp2_dynamics.pdf", plot=dyn_exp2, width=16, height=10)
-ggsave("plots/Nadine-Exp3_dynamics.pdf", plot=dyn_exp3, width=16, height=10)
-ggsave("plots/Nadine-Exp4_dynamics.pdf", plot=dyn_exp4, width=16, height=10)
-ggsave("plots/Nadine-Exp5_dynamics.pdf", plot=dyn_exp5, width=16, height=10)
 
 # Dynamics and dose response plot for exp2:
 dosplot = function(lh_data, xunit='[µM]') {
@@ -176,7 +161,7 @@ dosplot = function(lh_data, xunit='[µM]') {
 	xbreaks = unique(lh_data$Concentration)[-2]
 	p = qplot(Concentration, avg, data=lh_data, geom='point',
 		colour=factor(Repeat),
-		xlab = paste("Concentration", xunit), log = 'x', 
+		xlab = paste("Conc.", xunit), log = 'x', 
 		ylab="Normalised RFU at saturation [a.u]", main=maintitle )  +
 		geom_linerange(aes(ymin=avg-1.96*std, ymax=avg+1.96*std)) +
 		scale_x_continuous(breaks = xbreaks) +
@@ -184,21 +169,28 @@ dosplot = function(lh_data, xunit='[µM]') {
 	return(p)
 }
 
+# Make both plots for all experiments
+dyn_exp1 = dynplot(exp1, exp1.av, "Conc. [µM]")
+dyn_exp2 = dynplot(exp2, exp3.av, "Conc. [ng / ml]", clpalette="Spectral")
+dyn_exp3 = dynplot(exp3, exp2.av, "Conc. [µM]")
+dyn_exp4 = dynplot(exp4, exp3.av, "Conc. [ng / ml]", clpalette="Spectral")
+dyn_exp5 = dynplot(exp5, exp4.av, "Conc. [ng / ml]")
+dyn_exp6 = dynplot(exp6, exp5.av, "Conc. [µM]")
+
 dos_exp1 = dosplot(exp1.lh)
-dos_exp2 = dosplot(exp2.lh)
-dos_exp3 = dosplot(exp3.lh, xunit='[ng/ml]')
+dos_exp2 = dosplot(exp2.lh, xunit='[ng/ml]')
+dos_exp3 = dosplot(exp3.lh)
 dos_exp4 = dosplot(exp4.lh, xunit='[ng/ml]')
-dos_exp5 = dosplot(exp5.lh)
+dos_exp5 = dosplot(exp5.lh, xunit='[ng/ml]')
+dos_exp6 = dosplot(exp6.lh)
 
-ggsave("plots/Nadine-Exp1_doseresponse.pdf", plot=dos_exp1, width=16, height=10)
-ggsave("plots/Nadine-Exp2_doseresponse.pdf", plot=dos_exp2, width=16, height=10)
-ggsave("plots/Nadine-Exp3_doseresponse.pdf", plot=dos_exp3, width=16, height=10)
-ggsave("plots/Nadine-Exp4_doseresponse.pdf", plot=dos_exp4, width=16, height=10)
-ggsave("plots/Nadine-Exp5_doseresponse.pdf", plot=dos_exp5, width=16, height=10)
-
-
-
-
+# And save them
+for ( i in seq(1, 6) ) { 
+	ggsave(paste("plots/nadine-exp", i, "-dynamics.pdf", sep=''), 
+		plot=get(paste('dyn_exp', i, sep='')), width=16, height=10)
+	ggsave(paste("plots/nadine-exp", i, "-doseresponse.pdf", sep=''), 
+		plot=get(paste('dos_exp', i, sep='')), width=16, height=10)
+}
 
 ###############################
 # Non-random variants
@@ -360,7 +352,7 @@ ggsave("plots/varability_comparison.png", plot=p_var_comparison,
 
 # Nadine's stuff
 
-for ( i in seq(1, 5) ) {
+for ( i in seq(1, 6) ) {
 	ggsave(paste("plots/nadine-exp", i, "-induction.png", sep=''), 
 		plot=get(paste('dyn_exp', i, sep='')),
 		width=12, height=7.5)
