@@ -115,7 +115,13 @@ normalised.m = data.frame(
 normalised.m = merge(normalised.m, samplenames)
 
 # Extract only the last hour (saturation), and average over those points
-c
+
+normalised.m$Hours = as.integer(format(normalised.m$Time, "%H"))
+last_hour = normalised.m[normalised.m$Hours == c(11,12),]
+last_hour$Concentration = factor(last_hour$Concentration)
+last_hour_avg = ddply(last_hour, 
+  .variables=c('SampleName', 'Variant', 'Strength', 'Concentration'), 
+  .fun=summarise, avg=mean(norm_rfu), std=sd(norm_rfu)/sqrt(length(norm_rfu)))
 
 # Order the labels by affinity (RFU at 250 uM IPTG) [NO LONGER USED]
 # last_250 = last_hour_avg[last_hour_avg$Concentration == 250, ]
@@ -129,15 +135,22 @@ c
 w = 10
 dodge <- position_dodge(width=w)
 last_hour_avg$Strength = as.integer(last_hour_avg$Strength)
-p_non_random = qplot(Strength, avg, data=last_hour_avg, 
-	fill=Concentration, facets=Variant ~ .,
-	geom='bar', position=dodge, stat='identity', width=w,
-	xlab="Expected promoter efficiency", ylab="Normalised RFU at Saturation [a.u]",
-	main="Designed T7 Variants - Dose Response") + 
+last_hour_avg=last_hour_avg[last_hour_avg$Concentration=="250",]
+order=order(last_hour_avg$avg,decreasing=TRUE)
+last_hour_avg=last_hour_avg[order,]
+last_hour_avg$order=1:nrow(last_hour_avg)
+
+p_non_random = qplot(as.factor(order), avg, data=last_hour_avg, 
+	fill=Variant,
+	geom='bar',stat="identity",position=dodge,
+	xlab="Promoter\n(expected strength)", ylab="Normalised RFU at Saturation [a.u]",
+	main="Designed T7 Variants - Efficiency") + 
 	geom_errorbar(aes(ymin=avg-1.96*std, ymax=avg+1.96*std),
-		position=dodge, width=w/5) +
-	scale_fill_hue("IPTG conc. [µM]") +
-	scale_x_continuous(breaks=c(14, 30, 54, 80, 100, 110))
+	position=dodge, width=w/50) +
+  scale_x_discrete(breaks=1:12,labels=paste(factor(last_hour_avg$Variant,labels=c("Lac","No Lac")),"\n(",last_hour_avg$Strength,")")) +
+  scale_fill_discrete("")
+xlab(NULL)
+
 ggsave("plots/non-random.pdf", width=16, height=10)
 
 ## Compare expression ratio (with and without IPTG)
@@ -199,6 +212,34 @@ last_hour_rand = rand_norm.m[rand_norm.m$Hours == c(11,12),]
 last_hour_rand_avg = ddply(last_hour_rand, 
   .variables=c('Code'), 
   .fun=summarise, avg=mean(norm_rfu), std=sd(norm_rfu)/sqrt(length(norm_rfu)))
+last_hour_rand_avg$Position="NONE"
+last_hour_rand_avg$Position[c(grep("A",last_hour_rand_avg$Code),grep("D",last_hour_rand_avg$Code))]="(-7-12)"
+last_hour_rand_avg$Position[c(grep("B",last_hour_rand_avg$Code),grep("E",last_hour_rand_avg$Code))]="(-3-1/+3+1)"
+last_hour_rand_avg$Position[c(grep("C",last_hour_rand_avg$Code),grep("F",last_hour_rand_avg$Code))]="(-10)"
+
+last_hour_rand_avg=last_hour_rand_avg[last_hour_rand_avg$Position!="NONE",]
+
+
+last_hour_rand_avg$Source[c(grep("A",last_hour_rand_avg$Code),grep("B",last_hour_rand_avg$Code),grep("C",last_hour_rand_avg$Code))]="T7-const"
+last_hour_rand_avg$Source[c(grep("D",last_hour_rand_avg$Code),grep("E",last_hour_rand_avg$Code),grep("F",last_hour_rand_avg$Code))]="T7-lacz"
+
+last_hour_rand_avg$order=0
+last_hour_rand_avg$order[last_hour_rand_avg$Source=="T7-const"]=order(last_hour_rand_avg$avg[last_hour_rand_avg$Source=="T7-const"],decreasing=TRUE)
+last_hour_rand_avg$order[last_hour_rand_avg$Source!="T7-const"]=order(last_hour_rand_avg$avg[last_hour_rand_avg$Source!="T7-const"],decreasing=TRUE)
+
+w = 10
+dodge <- position_dodge(width=w)
+
+p_random = qplot(order,avg, data=last_hour_rand_avg, 
+  fill=Position,
+  facets=Source~.,
+	geom='bar',stat="identity",position=dodge,
+	xlab="Variant", ylab="Normalised RFU at Saturation [a.u]",
+	main="Random T7 Variants - Efficiency") + 
+	geom_errorbar(aes(ymin=avg-1.96*std, ymax=avg+1.96*std),
+	position=dodge, width=w/50) +
+xlab(NULL)
+
 
 last_hour_avg$type="Designed"
 last_hour_rand_avg$type="Random"
@@ -222,28 +263,31 @@ ggsave("plots/variability_comparison.pdf", width=3, height=7)
 
 firstOD=read.table("data/first_dnarecov_OD.dat",header=TRUE)
 firstOD=melt(firstOD,id.vars="Time")
+firstOD$variable=factor(firstOD$variable, labels=c("Lysing", "Non-Lysing"))
 plot.firstOD=qplot(Time, value, data=firstOD, geom='line',
       colour=variable,group=variable,
-      xlab = 'Time [hours]', ylab = 'OD 600') +
-  scale_colour_hue(h=c(0,120))
+      xlab = 'Time [hours]', ylab = 'Optical Density at 600 nm') +
+  scale_colour_hue("", h=c(0,120))
 
 #DNA in supernatant
 
 DNAsuper=read.table("data/first_dnarecov_DNAsupernatant.dat",header=TRUE)
 DNAsuper=melt(DNAsuper,id.vars="Time")
+DNAsuper$variable = factor(DNAsuper$variable, labels=c("Lysing", "Non-Lysing"))
 plot.DNAsuper=qplot(Time, value, data=DNAsuper, geom='line',
       colour=variable,group=variable,
       xlab = 'Time [hours]', ylab = 'mRFP1 genes in supernatant [pM]') +
-  scale_colour_hue(h=c(0,120))
+  scale_colour_hue("", h=c(0,120))
 
 #CFU 
 
 firstCFU=read.table("data/first_dnarecov_CFU.dat",header=TRUE)
 firstCFU=melt(firstCFU,id.vars="Time")
+firstCFU$variable = factor(firstCFU$variable, labels=c("Lysing", "Non-Lysing"))
 plot.firstcfu=qplot(Time, value, data=firstCFU, geom='line',
       colour=variable,group=variable,
-      xlab = 'Time [hours]', ylab = 'Colony forming units per uL') +
-  scale_colour_hue(h=c(0,120))
+      xlab = 'Time [hours]', ylab = 'Colony forming units per µL') +
+  scale_colour_hue("", h=c(0,120))
 
 ######################################
 # DNA recovery experiment : Second experiments
@@ -256,8 +300,8 @@ OD_lysing.m=melt(OD_lysing)
 
 p.OD_lysing=qplot(Time, value, data=OD_lysing.m, geom='line',
       colour=variable,group=variable,
-      xlab = 'Time [hours]', ylab = 'OD 600') +
-  scale_colour_hue(h=c(0,120))
+      xlab = 'Time [hours]', ylab = 'Optical Density at 600 nm') +
+  scale_colour_hue(NULL, h=c(0,120))
 
 #Fluorescence :
 rfp = read.table('data/17.09-dnarecov-RFP.dat', header=TRUE, sep='\t')
@@ -284,7 +328,7 @@ plot_lysis_r_g_fp=qplot(Hour, norm_value, data = dna_recovery.norm, geom = 'line
 	colour = Measure,
 	xlab = 'Time [hours]', ylab = 'Fluorescence [a.u.]') +
 	facet_grid(Sample ~ .) +
-  scale_colour_hue(h=c(0,120)) 
+  scale_colour_hue(NULL, h=c(0,120)) 
     
 #Colony :
                          
@@ -337,19 +381,21 @@ plot.qPCR=qplot(Time, value, data = qPCR, geom = 'line',
 # p_var_comparison	
 
 ggsave("plots/dose_response.png", plot=p_dose_response, 
-	width=12, height=7.5)
+	width=8, height=5)
 ggsave("plots/induction_ratio.png", plot=p_induction_ratio, 
-	width=12, height=7.5)
+  width=8, height=5)  
 ggsave("plots/lysis_dynamics.png", plot=p_lysis_dynamics,
-	width=12, height=7.5)
-ggsave("plots/non_random_dose_response.png", plot=p_non_random,
-	width=12, height=7.5)
+	  width=8, height=5)
+ggsave("plots/non_random_response.png", plot=p_non_random,
+	  width=8, height=5)
+        ggsave("plots/random_response.png", plot=p_random,
+    width=8, height=5)
 ggsave("plots/varability_comparison.png", plot=p_var_comparison, 
 	width=4, height=10)
-ggsave("plots/rgfp_lysis_comparison.png",plot=plot_lysis_r_g_fp,width=8,height=8)
-ggsave("plots/ODlysis.png",plot=p.OD_lysing,width=8,height=6)
- ggsave("plots/CFU.png",plot=plot.CFU,width=8,height=8)       
-ggsave("plots/qPCR_dnarecovery.png",plot=plot.qPCR,width=8,height=8)
-ggsave("plots/first_dnarecov_OD.png",plot=plot.firstOD,width=8,height=6)
-ggsave("plots/first_DNA_supernatant.png",plot=plot.DNAsuper,width=8,height=6)
-ggsave("plots/firstCFU.png",plot=plot.firstcfu,width=8,height=6)
+ggsave("plots/rgfp_lysis_comparison.png",plot=plot_lysis_r_g_fp,width=8,height=7)
+ggsave("plots/ODlysis.png",plot=p.OD_lysing,width=8,height=5)
+ ggsave("plots/CFU.png",plot=plot.CFU,width=8,height=7)       
+ggsave("plots/qPCR_dnarecovery.png",plot=plot.qPCR,width=8,height=7)
+ggsave("plots/first_dnarecov_OD.png",plot=plot.firstOD,width=8,height=5)
+ggsave("plots/first_DNA_supernatant.png",plot=plot.DNAsuper,width=8,height=5)
+ggsave("plots/firstCFU.png",plot=plot.firstcfu,width=8,height=5)

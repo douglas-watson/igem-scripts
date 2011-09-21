@@ -197,7 +197,7 @@ dosplot2 = function(lh_data, xunit='[µM]') {
 	return(p)
 }
 
-dos_tetR1 = dospot2(tetR1.lh, xunit='[ng/ml]')
+dos_tetR1 = dosplot2(tetR1.lh, xunit='[ng/ml]')
 dos_tetR2 = dosplot2(tetR2.lh, xunit='[ng/ml]')
 dos_tetR3 = dosplot2(tetR3.lh, xunit='[ng/ml]')
 dos_tetR4 = dosplot2(tetR4.lh, xunit='[ng/ml]')
@@ -240,12 +240,12 @@ for ( i in seq(1, 6) ) {
  	ggsave(paste("plots/tetR-", get(paste("tetR", i, sep=''))$SampleName[1],
 		"-induction.png", sep=""),
 		plot=get(paste('dyn_tetR', i, sep='')),
-		width=12, height=7.5)
+		width=8, height=5)
  	ggsave(paste("plots/tetR-", get(paste("tetR", i, sep=''))$SampleName[1],
 		"-doseresponse.png", sep=""),
 		plot=get(paste('dos_tetR', i, sep='')),
-		width=12, height=7.5)
+		width=8, height=5)
 }
 
-ggsave("plots/tetR-ATC0-induction.png", plot=p_atc0, width=12, height=7.5)
-ggsave("plots/tetR-ATC2000-induction.png", plot=p_atc2000, width=12, height=7.5)
+ggsave("plots/tetR-ATC0-induction.png", plot=p_atc0, width=8, height=5)
+ggsave("plots/tetR-ATC2000-induction.png", plot=p_atc2000, width=8, height=5)
