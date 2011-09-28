@@ -220,6 +220,43 @@ p_atc2000 = qplot(Time, NormRFU, data = ATC2000, colour = SampleName,
 	scale_x_datetime(minor = '10 min', format = '%H h') +
 	scale_colour_brewer("Mutant", palette="Accent")
 
+# PRESENTATION
+##############
+
+# For the four main mutants presented, compare induction at 0 and at full ATC /
+# IPTG
+
+# Keep only the mutants we want, and the two concentrations we are interested
+# in
+# TODO: define which mutants we actually want
+pres_averages = subset(last_hour_averages, 
+			SampleName %in% c('P39K', 'V36F') &
+			Concentration %in% c(0, 2000)
+		)
+
+# Wild type is in exp4.lh
+wildtype = subset(exp4.lh,
+			Concentration %in% c(0, 2000) &
+			Repeat == 1)
+wildtype$SampleName = 'WT'
+pres_averages = rbind(wildtype, pres_averages)
+
+# Reset factors for correct plotting
+pres_averages$Concentration = factor(pres_averages$Concentration)
+pres_averages$SampleName = factor(pres_averages$SampleName,
+	levels = c('WT', 'V36F', 'P39K'),
+	ordered = TRUE)
+
+dodge = position_dodge(width=0.9)
+p_tetR_induction = qplot(SampleName, avg, data = pres_averages,
+	fill = Concentration, geom = 'bar', position = 'dodge',
+	xlab = NULL, ylab = "Averaged and normalised RFU at saturation [a.u.]") +
+	geom_errorbar(aes(ymin = avg - 1.96 * std, ymax = avg + 1.96 * std),
+		position = dodge, width = 0.2) +
+	scale_fill_hue("ATC\nConc. [ng/ml]") #, h=c(92, 152), c = 100, l = 55) # +
+	# scale_y_continuous(breaks = pres_averages$avg, minor_breaks = NULL)
+p_tetR_induction
+
 ######################################
 # PNG exports
 ######################################
@@ -249,3 +286,4 @@ for ( i in seq(1, 6) ) {
 
 ggsave("plots/tetR-ATC0-induction.png", plot=p_atc0, width=8, height=5)
 ggsave("plots/tetR-ATC2000-induction.png", plot=p_atc2000, width=8, height=5)
+ggsave("plots/tetR-induction-comparison.png", plot=p_tetR_induction, width=9, height=6)
